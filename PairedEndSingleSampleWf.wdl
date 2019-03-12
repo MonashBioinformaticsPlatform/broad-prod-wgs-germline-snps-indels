@@ -1045,6 +1045,7 @@ task BaseRecalibrator {
     preemptible: preemptible_tries
     memory: "6 GB"
     disks: "local-disk " + sub(disk_size, "\\..*", "") + " HDD"
+    docker: "broadinstitute/gatk:4.0.0.0"
   }
   output {
     File recalibration_report = "${recalibration_report_filename}"
@@ -1083,6 +1084,7 @@ task ApplyBQSR {
     preemptible: preemptible_tries
     memory: "3500 MB"
     disks: "local-disk " + sub(disk_size, "\\..*", "") + " HDD"
+    docker: "broadinstitute/gatk:4.0.0.0"
   }
   output {
     File recalibrated_bam = "${output_bam_basename}.bam"
@@ -1107,6 +1109,7 @@ task GatherBqsrReports {
     preemptible: preemptible_tries
     memory: "3500 MB"
     disks: "local-disk " + disk_size + " HDD"
+    docker: "broadinstitute/gatk:4.0.0.0"
   }
   output {
     File output_bqsr_report = "${output_report_filename}"
@@ -1537,6 +1540,7 @@ task ValidateGVCF {
     preemptible: preemptible_tries
     memory: "3500 MB"
     disks: "local-disk " + sub(disk_size, "\\..*", "") + " HDD"
+    docker: "broadinstitute/gatk:4.0.0.0"
   }
 }
 
