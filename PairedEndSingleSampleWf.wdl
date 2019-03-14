@@ -569,7 +569,7 @@ task CollectQualityYieldMetrics {
   Int preemptible_tries
 
   command {
-    java -Xms2000m -jar /usr/gitc/picard.jar \
+    java -Xmx4000m -jar /usr/gitc/picard.jar \
       CollectQualityYieldMetrics \
       INPUT=${input_bam} \
       OQ=true \
@@ -577,7 +577,7 @@ task CollectQualityYieldMetrics {
   }
   runtime {
     disks: "local-disk " + sub(disk_size, "\\..*", "") + " HDD"
-    memory: "3 GB"
+    memory: "6 GB"
     preemptible: preemptible_tries
   }
   output {
@@ -633,14 +633,14 @@ task SamToFastqAndBwaMemAndMba {
     bash_ref_fasta=${ref_fasta}
     # if ref_alt has data in it,
     if [ -s ${ref_alt} ]; then
-      java -Xms5000m -jar /usr/gitc/picard.jar \
+      java -Xms5000m -Xmx13000m -jar /usr/gitc/picard.jar \
         SamToFastq \
         INPUT=${input_bam} \
         FASTQ=/dev/stdout \
         INTERLEAVE=true \
         NON_PF=true | \
       /usr/gitc/${bwa_commandline} /dev/stdin - 2> >(tee ${output_bam_basename}.bwa.stderr.log >&2) | \
-      java -Dsamjdk.compression_level=${compression_level} -Xms3000m -jar /usr/gitc/picard.jar \
+      java -Dsamjdk.compression_level=${compression_level} -Xms3000m -Xmx13000m -jar /usr/gitc/picard.jar \
         MergeBamAlignment \
         VALIDATION_STRINGENCY=SILENT \
         EXPECTED_ORIENTATIONS=FR \
@@ -698,7 +698,7 @@ task SortSam {
   Float disk_size
 
   command {
-    java -Dsamjdk.compression_level=${compression_level} -Xms4000m -jar /usr/gitc/picard.jar \
+    java -Dsamjdk.compression_level=${compression_level} -Xmx5000m -jar /usr/gitc/picard.jar \
       SortSam \
       INPUT=${input_bam} \
       OUTPUT=${output_bam_basename}.bam \
@@ -711,7 +711,7 @@ task SortSam {
   runtime {
     disks: "local-disk " + sub(disk_size, "\\..*", "") + " HDD"
     cpu: "1"
-    memory: "5000 MB"
+    memory: "6 GB"
     preemptible: preemptible_tries
   }
   output {
@@ -729,7 +729,7 @@ task CollectUnsortedReadgroupBamQualityMetrics {
   Float disk_size
 
   command {
-    java -Xms5000m -jar /usr/gitc/picard.jar \
+    java -Xmx6000m -jar /usr/gitc/picard.jar \
       CollectMultipleMetrics \
       INPUT=${input_bam} \
       OUTPUT=${output_bam_prefix} \
@@ -774,7 +774,7 @@ task CollectReadgroupBamQualityMetrics {
   Float disk_size
 
   command {
-    java -Xms5000m -jar /usr/gitc/picard.jar \
+    java -Xmx6000m -jar /usr/gitc/picard.jar \
       CollectMultipleMetrics \
       INPUT=${input_bam} \
       REFERENCE_SEQUENCE=${ref_fasta} \
@@ -811,7 +811,7 @@ task CollectAggregationMetrics {
   Float disk_size
 
   command {
-    java -Xms5000m -jar /usr/gitc/picard.jar \
+    java -Xmx7000m -jar /usr/gitc/picard.jar \
       CollectMultipleMetrics \
       INPUT=${input_bam} \
       REFERENCE_SEQUENCE=${ref_fasta} \
@@ -831,7 +831,7 @@ task CollectAggregationMetrics {
     touch ${output_bam_prefix}.insert_size_histogram.pdf
   }
   runtime {
-    memory: "7 GB"
+    memory: "8 GB"
     disks: "local-disk " + sub(disk_size, "\\..*", "") + " HDD"
     preemptible: preemptible_tries
   }
@@ -862,7 +862,7 @@ task CrossCheckFingerprints {
 
   command <<<
     java -Dsamjdk.buffer_size=131072 \
-      -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xms2000m \
+      -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx4000m \
       -jar /usr/gitc/picard.jar \
       CrosscheckReadGroupFingerprints \
       OUTPUT=${metrics_filename} \
@@ -873,7 +873,7 @@ task CrossCheckFingerprints {
   >>>
   runtime {
     preemptible: preemptible_tries
-    memory: "2 GB"
+    memory: "5 GB"
     disks: "local-disk " + sub(disk_size, "\\..*", "") + " HDD"
   }
   output {
@@ -895,7 +895,7 @@ task CheckFingerprint {
 
   command <<<
     java -Dsamjdk.buffer_size=131072 \
-      -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xms1024m  \
+      -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx4000m  \
       -jar /usr/gitc/picard.jar \
       CheckFingerprint \
       INPUT=${input_bam} \
@@ -908,7 +908,7 @@ task CheckFingerprint {
   >>>
  runtime {
     preemptible: preemptible_tries
-    memory: "1 GB"
+    memory: "5 GB"
     disks: "local-disk " + sub(disk_size, "\\..*", "") + " HDD"
   }
   output {
@@ -935,7 +935,7 @@ task MarkDuplicates {
  # This works because the output of BWA is query-grouped and therefore, so is the output of MergeBamAlignment.
  # While query-grouped isn't actually query-sorted, it's good enough for MarkDuplicates with ASSUME_SORT_ORDER="queryname"
   command {
-    java -Dsamjdk.compression_level=${compression_level} -Xms4000m -jar /usr/gitc/picard.jar \
+    java -Dsamjdk.compression_level=${compression_level} -Xms4000m -Xmx10000m -jar /usr/gitc/picard.jar \
       MarkDuplicates \
       INPUT=${sep=' INPUT=' input_bams} \
       OUTPUT=${output_bam_basename}.bam \
@@ -949,7 +949,7 @@ task MarkDuplicates {
   }
   runtime {
     preemptible: preemptible_tries
-    memory: "7 GB"
+    memory: "11 GB"
     disks: "local-disk " + sub(disk_size, "\\..*", "") + " HDD"
   }
   output {
@@ -1031,7 +1031,7 @@ task BaseRecalibrator {
   command {
     /usr/gitc/gatk4/gatk-launch --javaOptions "-XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -XX:+PrintFlagsFinal \
       -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -XX:+PrintGCDetails \
-      -Xloggc:gc_log.log -Xms4000m" \
+      -Xloggc:gc_log.log -Xmx5000m" \
       BaseRecalibrator \
       -R ${ref_fasta} \
       -I ${input_bam} \
@@ -1045,7 +1045,7 @@ task BaseRecalibrator {
     preemptible: preemptible_tries
     memory: "6 GB"
     disks: "local-disk " + sub(disk_size, "\\..*", "") + " HDD"
-    docker: "broadinstitute/gatk:4.0.0.0"
+    docker: "broadinstitute/genomes-in-the-cloud:2.3.1-1512499786"
   }
   output {
     File recalibration_report = "${recalibration_report_filename}"
@@ -1068,7 +1068,7 @@ task ApplyBQSR {
   command {
     /usr/gitc/gatk4/gatk-launch --javaOptions "-XX:+PrintFlagsFinal -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps \
       -XX:+PrintGCDetails -Xloggc:gc_log.log \
-      -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Dsamjdk.compression_level=${compression_level} -Xms3000m" \
+      -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Dsamjdk.compression_level=${compression_level} -Xmx4000m" \
       ApplyBQSR \
       --createOutputBamMD5 \
       --addOutputSAMProgramRecord \
@@ -1082,9 +1082,9 @@ task ApplyBQSR {
   }
   runtime {
     preemptible: preemptible_tries
-    memory: "3500 MB"
+    memory: "5 GB"
     disks: "local-disk " + sub(disk_size, "\\..*", "") + " HDD"
-    docker: "broadinstitute/gatk:4.0.0.0"
+    docker: "broadinstitute/genomes-in-the-cloud:2.3.1-1512499786"
   }
   output {
     File recalibrated_bam = "${output_bam_basename}.bam"
@@ -1100,16 +1100,16 @@ task GatherBqsrReports {
   Int preemptible_tries
 
   command {
-    /usr/gitc/gatk4/gatk-launch --javaOptions "-Xms3000m" \
+    /usr/gitc/gatk4/gatk-launch --javaOptions "-Xmx4000m" \
       GatherBQSRReports \
       -I ${sep=' -I ' input_bqsr_reports} \
       -O ${output_report_filename}
     }
   runtime {
     preemptible: preemptible_tries
-    memory: "3500 MB"
+    memory: "5 GB"
     disks: "local-disk " + disk_size + " HDD"
-    docker: "broadinstitute/gatk:4.0.0.0"
+    docker: "broadinstitute/genomes-in-the-cloud:2.3.1-1512499786"
   }
   output {
     File output_bqsr_report = "${output_report_filename}"
@@ -1125,7 +1125,7 @@ task GatherBamFiles {
   Int preemptible_tries
 
   command {
-    java -Dsamjdk.compression_level=${compression_level} -Xms2000m -jar /usr/gitc/picard.jar \
+    java -Dsamjdk.compression_level=${compression_level} -Xmx4000m -jar /usr/gitc/picard.jar \
       GatherBamFiles \
       INPUT=${sep=' INPUT=' input_bams} \
       OUTPUT=${output_bam_basename}.bam \
@@ -1134,7 +1134,7 @@ task GatherBamFiles {
     }
   runtime {
     preemptible: preemptible_tries
-    memory: "3 GB"
+    memory: "5 GB"
     disks: "local-disk " + sub(disk_size, "\\..*", "") + " HDD"
   }
   output {
@@ -1204,7 +1204,7 @@ task ValidateSamFile {
   Int preemptible_tries
 
   command {
-    java -Xms6000m -jar /usr/gitc/picard.jar \
+    java -Xmx8000m -jar /usr/gitc/picard.jar \
       ValidateSamFile \
       INPUT=${input_bam} \
       OUTPUT=${report_filename} \
@@ -1217,7 +1217,7 @@ task ValidateSamFile {
   }
   runtime {
     preemptible: preemptible_tries
-    memory: "7 GB"
+    memory: "9 GB"
     disks: "local-disk " + sub(disk_size, "\\..*", "") + " HDD"
   }
   output {
@@ -1238,7 +1238,7 @@ task CollectWgsMetrics {
   Int preemptible_tries
 
   command {
-    java -Xms2000m -jar /usr/gitc/picard.jar \
+    java -Xms2000m -Xmx7000m -jar /usr/gitc/picard.jar \
       CollectWgsMetrics \
       INPUT=${input_bam} \
       VALIDATION_STRINGENCY=SILENT \
@@ -1251,7 +1251,7 @@ task CollectWgsMetrics {
   }
   runtime {
     preemptible: preemptible_tries
-    memory: "3 GB"
+    memory: "8 GB"
     disks: "local-disk " + sub(disk_size, "\\..*", "") + " HDD"
   }
   output {
@@ -1272,7 +1272,7 @@ task CollectRawWgsMetrics {
   Int preemptible_tries
 
   command {
-    java -Xms2000m -jar /usr/gitc/picard.jar \
+    java -Xms2000m -Xmx7000m -jar /usr/gitc/picard.jar \
       CollectRawWgsMetrics \
       INPUT=${input_bam} \
       VALIDATION_STRINGENCY=SILENT \
@@ -1285,7 +1285,7 @@ task CollectRawWgsMetrics {
   }
   runtime {
     preemptible: preemptible_tries
-    memory: "3 GB"
+    memory: "8 GB"
     disks: "local-disk " + sub(disk_size, "\\..*", "") + " HDD"
   }
   output {
@@ -1302,14 +1302,14 @@ task CalculateReadGroupChecksum {
   Int preemptible_tries
 
   command {
-    java -Xms1000m -jar /usr/gitc/picard.jar \
+    java -Xmx4000m -jar /usr/gitc/picard.jar \
       CalculateReadGroupChecksum \
       INPUT=${input_bam} \
       OUTPUT=${read_group_md5_filename}
   }
   runtime {
     preemptible: preemptible_tries
-    memory: "2 GB"
+    memory: "5 GB"
     disks: "local-disk " + sub(disk_size, "\\..*", "") + " HDD"
   }
   output {
@@ -1405,7 +1405,7 @@ task ScatterIntervalList {
   command <<<
     set -e
     mkdir out
-    java -Xms1g -jar /usr/gitc/picard.jar \
+    java -Xms1000m -Xmx3000m -jar /usr/gitc/picard.jar \
       IntervalListTools \
       SCATTER_COUNT=${scatter_count} \
       SUBDIVISION_MODE=BALANCING_WITHOUT_INTERVAL_SUBDIVISION_WITH_OVERFLOW \
@@ -1431,7 +1431,7 @@ task ScatterIntervalList {
     Int interval_count = read_int(stdout())
   }
   runtime {
-    memory: "2 GB"
+    memory: "4 GB"
   }
 }
 
@@ -1453,14 +1453,14 @@ task HaplotypeCaller {
   # Using PrintReads is a temporary solution until we update HaploypeCaller to use GATK4. Once that is done,
   # HaplotypeCaller can stream the required intervals directly from the cloud.
   command {
-    /usr/gitc/gatk4/gatk-launch --javaOptions "-Xms2g" \
+    /usr/gitc/gatk4/gatk-launch --javaOptions "-Xms2g -Xmx10g" \
       PrintReads \
       -I ${input_bam} \
       --interval_padding 500 \
       -L ${interval_list} \
       -O local.sharded.bam \
     && \
-    java -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xms8000m \
+    java -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xms8000m -Xmx10000m \
       -jar /usr/gitc/GATK35.jar \
       -T HaplotypeCaller \
       -R ${ref_fasta} \
@@ -1475,8 +1475,9 @@ task HaplotypeCaller {
       --read_filter OverclippedRead
   }
   runtime {
+    maxRetries: 3
     preemptible: preemptible_tries
-    memory: "10 GB"
+    memory: "11 GB"
     cpu: "1"
     disks: "local-disk " + sub(disk_size, "\\..*", "") + " HDD"
   }
@@ -1497,14 +1498,14 @@ task MergeVCFs {
   # Using MergeVcfs instead of GatherVcfs so we can create indices
   # See https://github.com/broadinstitute/picard/issues/789 for relevant GatherVcfs ticket
   command {
-    java -Xms2000m -jar /usr/gitc/picard.jar \
+    java -Xmx4000m -jar /usr/gitc/picard.jar \
       MergeVcfs \
       INPUT=${sep=' INPUT=' input_vcfs} \
       OUTPUT=${output_vcf_name}
   }
   runtime {
     preemptible: preemptible_tries
-    memory: "3 GB"
+    memory: "5 GB"
     disks: "local-disk " + disk_size + " HDD"
   }
   output {
@@ -1527,7 +1528,7 @@ task ValidateGVCF {
   Int preemptible_tries
 
   command {
-    /usr/gitc/gatk4/gatk-launch --javaOptions "-Xms3000m" \
+    /usr/gitc/gatk4/gatk-launch --javaOptions "-Xmx4000m" \
       ValidateVariants \
       -V ${input_vcf} \
       -R ${ref_fasta} \
@@ -1538,9 +1539,9 @@ task ValidateGVCF {
   }
   runtime {
     preemptible: preemptible_tries
-    memory: "3500 MB"
+    memory: "6 GB"
     disks: "local-disk " + sub(disk_size, "\\..*", "") + " HDD"
-    docker: "broadinstitute/gatk:4.0.0.0"
+    docker: "broadinstitute/genomes-in-the-cloud:2.3.1-1512499786"
   }
 }
 
@@ -1557,7 +1558,7 @@ task CollectGvcfCallingMetrics {
   Int preemptible_tries
 
   command {
-    java -Xms2000m -jar /usr/gitc/picard.jar \
+    java -Xmx4000m -jar /usr/gitc/picard.jar \
       CollectVariantCallingMetrics \
       INPUT=${input_vcf} \
       OUTPUT=${metrics_basename} \
@@ -1568,7 +1569,7 @@ task CollectGvcfCallingMetrics {
   }
   runtime {
     preemptible: preemptible_tries
-    memory: "3 GB"
+    memory: "6 GB"
     disks: "local-disk " + sub(disk_size, "\\..*", "") + " HDD"
   }
   output {
@@ -1604,7 +1605,7 @@ task ConvertToCram {
   >>>
   runtime {
     preemptible: preemptible_tries
-    memory: "3 GB"
+    memory: "5 GB"
     cpu: "1"
     disks: "local-disk " + sub(disk_size, "\\..*", "") + " HDD"
   }
