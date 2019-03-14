@@ -91,11 +91,12 @@ and the SLURM account to submit jobs under.
 
 ```bash
 cromwell \
-  -Dconfig.file=$(pwd)/broad-prod-wgs-germline-snps-indels/slurm-backend.conf \
-  -Dsystem.input-read-limits.lines=1000000 \
-  run broad-prod-wgs-germline-snps-indels/PairedEndSingleSampleWf.gatk4.0.wdl \
-  --inputs broad-prod-wgs-germline-snps-indels/PairedEndSingleSampleWf.hg38.local.inputs.json \
-  --options broad-prod-wgs-germline-snps-indels/PairedEndSingleSampleWf.local.options.json
+    -Xmx6g \
+    -Dconfig.file=$(pwd)/broad-prod-wgs-germline-snps-indels/slurm-backend.conf \
+    -Dsystem.input-read-limits.lines=1000000 \
+    run broad-prod-wgs-germline-snps-indels/PairedEndSingleSampleWf.gatk4.0.wdl \
+    --inputs broad-prod-wgs-germline-snps-indels/PairedEndSingleSampleWf.hg38.local.inputs.json \
+    --options broad-prod-wgs-germline-snps-indels/PairedEndSingleSampleWf.local.options.json
 ```
 
 ### JointGenotypingWf :
@@ -136,12 +137,14 @@ This example uses the provided SLURM backend and specifies some paths for Singul
 and the SLURM account to submit jobs under.
 
 ```bash
-cromwell -Dconfig.file=$(pwd)/broad-prod-wgs-germline-snps-indels/slurm-backend.conf \
-         -Dsystem.input-read-limits.lines=1000000 \
-         run broad-prod-wgs-germline-snps-indels/JointGenotypingWf.wdl \
-         --inputs broad-prod-wgs-germline-snps-indels/JointGenotypingWf.hg38.local.inputs.json \
-         --options broad-prod-wgs-germline-snps-indels/JointGenotypingWf.local.options.json
-         
+cromwell \
+    -Xmx6g \
+    -Dconfig.file=$(pwd)/broad-prod-wgs-germline-snps-indels/slurm-backend.conf \
+    -Dsystem.input-read-limits.lines=1000000 \
+    run broad-prod-wgs-germline-snps-indels/JointGenotypingWf.wdl \
+    --inputs broad-prod-wgs-germline-snps-indels/JointGenotypingWf.hg38.local.inputs.json \
+    --options broad-prod-wgs-germline-snps-indels/JointGenotypingWf.local.options.json
+
 # --options DOES seem to work for JointGenotypingWf
 ```
 
